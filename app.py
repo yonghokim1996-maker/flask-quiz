@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, session
 import random
 import json
 import os
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'default_secret_key')
 
 # 공백 제거 함수
 def clean_text(text):
@@ -16,20 +17,40 @@ def load_questions():
     with open(json_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+# ✅ 로그인 필요 데코레이터
+def login_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == os.environ.get('ACCESS_PASSWORD', '8104'):  # Render에서 설정
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', error="비밀번호가 올바르지 않습니다.")
+    return render_template('login.html')
+
 @app.route('/')
+@login_required
 def index():
     questions = load_questions()
     randomized_questions = []
 
-    # 질문을 셔플하면서 원본 인덱스를 함께 저장
-    indexed_questions = list(enumerate(questions))
-    random.shuffle(indexed_questions)
+    shuffled_questions = questions[:]
+    random.shuffle(shuffled_questions)
 
-    for original_index, q in indexed_questions:
+    for q in shuffled_questions:
         shuffled_choices = q['choices'][:]
         random.shuffle(shuffled_choices)
         randomized_questions.append({
-            "id": original_index,  # 원본 인덱스 저장
             "question": clean_text(q['question']),
             "choices": [clean_text(c) for c in shuffled_choices],
             "image": q.get('image'),
@@ -40,15 +61,14 @@ def index():
     return render_template('index.html', questions=randomized_questions)
 
 @app.route('/submit', methods=['POST'])
+@login_required
 def submit():
     questions = load_questions()
     score = 0
     incorrect_answers = []
 
-    # 원본 질문 인덱스를 사용해서 정확하게 매칭
-    for q in questions:
-        q_id = questions.index(q)
-        user_answer = request.form.get(f'q{q_id}')
+    for i, q in enumerate(questions):
+        user_answer = request.form.get(f'q{i}')
         if user_answer and clean_text(user_answer) == clean_text(q['answer']):
             score += 1
         else:
@@ -63,6 +83,12 @@ def submit():
                            score=score,
                            total=len(questions),
                            incorrect_answers=incorrect_answers)
+
+@app.route('/logout')
+@login_required
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)
