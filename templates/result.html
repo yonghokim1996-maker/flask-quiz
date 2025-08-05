@@ -2,10 +2,33 @@
 <html>
 <head>
     <title>시험 결과</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: Arial, sans-serif; }
         .result { margin: 20px; }
-        .wrong-answer { margin-top: 20px; border: 1px solid #ccc; padding: 10px; }
+        .score-bar-container {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .score-bar {
+            height: 25px;
+            width: 0%;
+            background-color: #28a745;
+            border-radius: 5px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            transition: width 1s ease-in-out;
+        }
+        .wrong-answer { 
+            margin-top: 20px; 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
         .question { font-weight: bold; }
         .explanation { color: #d00; }
         .pdf-link { 
@@ -20,12 +43,40 @@
         .pdf-link:hover {
             background-color: #0056b3;
         }
+        a.retry-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        a.retry-link:hover {
+            background-color: #5a6268;
+        }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const score = {{ score }};
+            const total = {{ total }};
+            const percentage = (score / total) * 100;
+            const bar = document.getElementById('score-bar');
+            bar.style.width = percentage + '%';
+            bar.textContent = Math.round(percentage) + '%';
+        });
+    </script>
 </head>
 <body>
     <div class="result">
         <h1>시험 결과</h1>
         <p>점수: {{ score }} / {{ total }}</p>
+
+        <!-- ✅ 점수 게이지 바 -->
+        <div class="score-bar-container">
+            <div id="score-bar" class="score-bar"></div>
+        </div>
+
         {% if incorrect_answers %}
             <h2>틀린 문제 해설</h2>
             {% for item in incorrect_answers %}
@@ -40,13 +91,14 @@
             <p>모든 문제를 맞추셨습니다! 🎉</p>
         {% endif %}
 
-        <!-- ✅ 해설 모아보기 버튼 추가 -->
+        <!-- PDF 보기 -->
         <a class="pdf-link" href="{{ url_for('static', filename='files/answers.pdf') }}" target="_blank">
             📄 해설 모아보기 (PDF)
         </a>
 
-        <br><br>
-        <a href="/">다시 시험보기</a>
+        <!-- 다시 시험보기 -->
+        <br>
+        <a href="/" class="retry-link">다시 시험보기</a>
     </div>
 </body>
 </html>
