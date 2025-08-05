@@ -6,6 +6,26 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #ddd;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+        }
+        .progress-bar {
+            height: 8px;
+            width: 0%;
+            background-color: #007bff;
+            transition: width 0.3s;
+        }
+        .content {
+            padding: 20px;
+            margin-top: 20px;
         }
         .question-block {
             margin-bottom: 30px;
@@ -39,42 +59,67 @@
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.querySelector('form');
             const submitBtn = document.getElementById('submit-btn');
+            const questionCount = {{ questions|length }};
+            const progressBar = document.getElementById('progress-bar');
+            const questionBlocks = document.querySelectorAll('.question-block');
 
-            form.addEventListener('change', function() {
-                let allAnswered = true;
-                const questionCount = {{ questions|length }};
+            function updateProgress() {
+                let answeredCount = 0;
                 for (let i = 0; i < questionCount; i++) {
-                    if (!form.querySelector(`input[name="q${i}"]:checked`)) {
-                        allAnswered = false;
-                        break;
+                    if (form.querySelector(`input[name="q${i}"]:checked`)) {
+                        answeredCount++;
                     }
                 }
-                submitBtn.disabled = !allAnswered;
+                const progressPercent = (answeredCount / questionCount) * 100;
+                progressBar.style.width = progressPercent + '%';
+                submitBtn.disabled = answeredCount !== questionCount;
+            }
+
+            form.addEventListener('change', function(e) {
+                updateProgress();
+
+                // 자동 스크롤: 사용자가 답을 선택하면 다음 문제로 이동
+                if (e.target.type === 'radio') {
+                    const currentQuestion = e.target.closest('.question-block');
+                    const nextQuestion = currentQuestion.nextElementSibling;
+                    if (nextQuestion && nextQuestion.classList.contains('question-block')) {
+                        nextQuestion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
             });
+
+            updateProgress();
         });
     </script>
 </head>
 <body>
-    <h1>SMD+CM 요점정리 모의시험</h1>
-    <form action="/submit" method="post">
-        {% for idx, q in questions %}
-            <div class="question-block">
-                <p><strong>{{ idx + 1 }}. {{ q.question }}</strong></p>
-                {% if q.image %}
-                    <img src="{{ url_for('static', filename='images/' ~ q.image) }}" alt="문제 이미지">
-                {% endif %}
-                {% for choice in q.choices %}
-                    <label class="choice">
-                        <input type="radio" 
-                               id="q{{ idx }}_{{ loop.index }}" 
-                               name="q{{ idx }}" 
-                               value="{{ choice }}">
-                        {{ choice }}
-                    </label>
-                {% endfor %}
-            </div>
-        {% endfor %}
-        <button type="submit" id="submit-btn" disabled>제출하기</button>
-    </form>
+    <!-- 진행 바 -->
+    <div class="progress-container">
+        <div id="progress-bar" class="progress-bar"></div>
+    </div>
+
+    <div class="content">
+        <h1>SMD+CM 요점정리 모의시험</h1>
+        <form action="/submit" method="post">
+            {% for idx, q in questions %}
+                <div class="question-block">
+                    <p><strong>{{ idx + 1 }}. {{ q.question }}</strong></p>
+                    {% if q.image %}
+                        <img src="{{ url_for('static', filename='images/' ~ q.image) }}" alt="문제 이미지">
+                    {% endif %}
+                    {% for choice in q.choices %}
+                        <label class="choice">
+                            <input type="radio" 
+                                   id="q{{ idx }}_{{ loop.index }}" 
+                                   name="q{{ idx }}" 
+                                   value="{{ choice }}">
+                            {{ choice }}
+                        </label>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit" id="submit-btn" disabled>제출하기</button>
+        </form>
+    </div>
 </body>
 </html>
