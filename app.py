@@ -65,13 +65,15 @@ def index():
     questions = load_questions()
     randomized_questions = []
 
-    shuffled_questions = questions[:]
-    random.shuffle(shuffled_questions)
+    # 질문 섞기
+    shuffled = list(enumerate(questions))
+    random.shuffle(shuffled)
 
-    for q in shuffled_questions:
+    for idx, q in shuffled:
         shuffled_choices = q['choices'][:]
         random.shuffle(shuffled_choices)
         randomized_questions.append({
+            "id": idx,  # 원본 인덱스 저장
             "question": clean_text(q['question']),
             "choices": [clean_text(c) for c in shuffled_choices],
             "image": q.get('image'),
@@ -88,16 +90,23 @@ def submit():
     score = 0
     incorrect_answers = []
 
-    for i, q in enumerate(questions):
+    for i in range(len(questions)):
+        q_id = request.form.get(f'id{i}')
+        if q_id is None:
+            continue
+        q_id = int(q_id)
         user_answer = request.form.get(f'q{i}')
-        if user_answer and clean_text(user_answer) == clean_text(q['answer']):
+
+        correct_answer = clean_text(questions[q_id]['answer'])
+
+        if user_answer and clean_text(user_answer) == correct_answer:
             score += 1
         else:
             incorrect_answers.append({
-                "question": q['question'],
+                "question": questions[q_id]['question'],
                 "your_answer": user_answer if user_answer else "미응답",
-                "correct_answer": q['answer'],
-                "explanation": q.get('explanation', '해설이 준비되지 않았습니다.')
+                "correct_answer": correct_answer,
+                "explanation": questions[q_id].get('explanation', '해설이 준비되지 않았습니다.')
             })
 
     return render_template('result.html',

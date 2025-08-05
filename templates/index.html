@@ -43,6 +43,14 @@
         .submit-btn:hover {
             background: #0056b3;
         }
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -64,6 +72,7 @@
                     </label>
                     {% endfor %}
                 </div>
+                <input type="hidden" name="id{{ i }}" value="{{ questions[i]['id'] }}">
             </div>
             {% endfor %}
             <button type="submit" class="submit-btn">제출하기</button>
@@ -91,7 +100,7 @@
                     })
                     .catch(err => console.error(err));
                 }
-                clickCount = 0; // 초기화
+                clickCount = 0;
             }
             setTimeout(() => clickCount = 0, 2000);
         });
