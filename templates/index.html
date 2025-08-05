@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>SMD+CM 요점정리</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -10,8 +11,10 @@
             margin-bottom: 30px;
         }
         .choice {
-            display: block;
+            display: flex;
+            align-items: center;
             margin-left: 20px;
+            cursor: pointer;
         }
         img {
             max-width: 100%;
@@ -19,13 +22,37 @@
             display: block;
             margin: 10px 0;
         }
-        input[type="radio"] {
-            appearance: radio !important;
-            -webkit-appearance: radio !important;
-            -moz-appearance: radio !important;
-            display: inline-block !important;
+        button[type="submit"] {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button[type="submit"]:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
         }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const submitBtn = document.getElementById('submit-btn');
+
+            form.addEventListener('change', function() {
+                let allAnswered = true;
+                const questionCount = {{ questions|length }};
+                for (let i = 0; i < questionCount; i++) {
+                    if (!form.querySelector(`input[name="q${i}"]:checked`)) {
+                        allAnswered = false;
+                        break;
+                    }
+                }
+                submitBtn.disabled = !allAnswered;
+            });
+        });
+    </script>
 </head>
 <body>
     <h1>SMD+CM 요점정리 모의시험</h1>
@@ -39,15 +66,15 @@
                 {% for choice in q.choices %}
                     <label class="choice">
                         <input type="radio" 
+                               id="q{{ idx }}_{{ loop.index }}" 
                                name="q{{ idx }}" 
-                               value="{{ choice }}" 
-                               required>
+                               value="{{ choice }}">
                         {{ choice }}
                     </label>
                 {% endfor %}
             </div>
         {% endfor %}
-        <button type="submit">제출하기</button>
+        <button type="submit" id="submit-btn" disabled>제출하기</button>
     </form>
 </body>
 </html>
