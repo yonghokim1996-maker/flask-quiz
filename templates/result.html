@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>시험 결과</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .result { margin: 20px; }
+        .wrong-answer { margin-top: 20px; border: 1px solid #ccc; padding: 10px; }
+        .question { font-weight: bold; }
+        .explanation { color: #d00; }
+    </style>
+</head>
+<body>
+    <div class="result">
+        <h1>시험 결과</h1>
+        <p>점수: {{ score }} / {{ total }}</p>
+        {% if incorrect_answers %}
+            <h2>틀린 문제 해설</h2>
+            {% for item in incorrect_answers %}
+                <div class="wrong-answer">
+                    <p class="question">{{ loop.index }}. {{ item.question }}</p>
+                    <p>내가 선택한 답: {{ item.your_answer }}</p>
+                    <p>정답: {{ item.correct_answer }}</p>
+                    <p class="explanation">해설: {{ item.explanation }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>모든 문제를 맞추셨습니다! 🎉</p>
+        {% endif %}
+        <a href="/">다시 시험보기</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SMD+CM 요점정리</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .question-block {
+            margin-bottom: 30px;
+        }
+        .choice {
+            display: block;
+            margin-left: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 10px 0;
+        }
+        input[type="radio"] {
+            appearance: radio !important;
+            -webkit-appearance: radio !important;
+            -moz-appearance: radio !important;
+            display: inline-block !important;
+        }
+    </style>
+</head>
+<body>
+    <h1>SMD+CM 요점정리 모의시험</h1>
+    <form action="/submit" method="post">
+        {% for idx, q in questions %}
+            <div class="question-block">
+                <p><strong>{{ idx + 1 }}. {{ q.question }}</strong></p>
+                {% if q.image %}
+                    <img src="{{ url_for('static', filename='images/' ~ q.image) }}" alt="문제 이미지">
+                {% endif %}
+                {% for choice in q.choices %}
+                    <label class="choice">
+                        <input type="radio" 
+                               name="q{{ idx }}" 
+                               value="{{ choice }}" 
+                               required>
+                        {{ choice }}
+                    </label>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <button type="submit">제출하기</button>
+    </form>
+</body>
+</html>
