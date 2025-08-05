@@ -1,0 +1,31 @@
+<h2>문제 관리</h2>
+<table border="1">
+  <tr><th>문제</th><th>정답</th><th>작업</th></tr>
+  {% for q in questions %}
+  <tr>
+    <td>{{ q.question }}</td>
+    <td>{{ q.answer }}</td>
+    <td>
+      <form action="/admin/delete/{{ loop.index0 }}" method="POST">
+        <button type="submit">삭제</button>
+      </form>
+      <form action="/admin/edit/{{ loop.index0 }}" method="POST">
+        <input type="text" name="question" value="{{ q.question }}">
+        <input type="text" name="choices" value="{{ q.choices|join(',') }}">
+        <input type="text" name="answer" value="{{ q.answer }}">
+        <input type="text" name="explanation" value="{{ q.explanation }}">
+        <button type="submit">수정</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h3>문제 추가</h3>
+<form action="/admin/add" method="POST">
+  <input type="text" name="question" placeholder="문제 입력"><br>
+  <input type="text" name="choices" placeholder="선택지(쉼표로 구분)"><br>
+  <input type="text" name="answer" placeholder="정답"><br>
+  <input type="text" name="explanation" placeholder="해설"><br>
+  <button type="submit">추가</button>
+</form>

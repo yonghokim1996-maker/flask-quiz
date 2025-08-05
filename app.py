@@ -2,40 +2,61 @@ from flask import Flask, render_template, request, redirect, url_for, session
 import random
 import json
 import os
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'default_secret_key')
 
-# 공백 제거 함수
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def clean_text(text):
     return text.strip() if isinstance(text, str) else text
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def load_questions():
     json_path = os.path.join(BASE_DIR, 'questions.json')
     with open(json_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
-# ✅ 로그인 필요 데코레이터
+# ✅ 로그인 데코레이터
 def login_required(f):
-    from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('logged_in'):
+        if not session.get('user_logged_in'):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
+# ✅ 관리자 전용 데코레이터
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_logged_in'):
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# 🔑 일반 사용자 로그인
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         password = request.form.get('password')
-        if password == os.environ.get('ACCESS_PASSWORD', '8104'):  # Render에서 설정
-            session['logged_in'] = True
+        if password == os.environ.get('USER_PASSWORD', '8104'):
+            session['user_logged_in'] = True
             return redirect(url_for('index'))
         else:
             return render_template('login.html', error="비밀번호가 올바르지 않습니다.")
+    return render_template('login.html')
+
+# 🔑 관리자 로그인
+@app.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == os.environ.get('ADMIN_PASSWORD', '2241'):
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin'))
+        else:
+            return render_template('login.html', error="관리자 비밀번호가 올바르지 않습니다.")
     return render_template('login.html')
 
 @app.route('/')
@@ -84,10 +105,14 @@ def submit():
                            total=len(questions),
                            incorrect_answers=incorrect_answers)
 
+@app.route('/admin')
+@admin_required
+def admin():
+    return "여기서 문제를 수정/추가/삭제할 수 있는 페이지를 만들면 됩니다."
+
 @app.route('/logout')
-@login_required
 def logout():
-    session.pop('logged_in', None)
+    session.clear()
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
