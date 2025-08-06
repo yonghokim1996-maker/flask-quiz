@@ -7,7 +7,7 @@
     <style>
         body { font-family: Arial, sans-serif; background: #f8f9fa; padding: 20px; }
         .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
-        h2 { text-align: center; }
+        h2, h3 { text-align: center; }
         .question-block { border-bottom: 1px solid #ddd; padding: 10px 0; }
         input[type="text"], textarea { width: 100%; margin-bottom: 10px; padding: 8px; }
         button { padding: 8px 12px; margin-right: 5px; cursor: pointer; }
@@ -18,25 +18,28 @@
 <div class="container">
     <h2>문제 관리</h2>
 
-    {% for i in range(questions|length) %}
+    {% for i, q in questions %}
     <div class="question-block">
         <form method="POST" action="/admin/edit/{{ i }}">
             <label>문제:</label>
-            <input type="text" name="question" value="{{ questions[i].question }}">
+            <input type="text" name="question" value="{{ q.question }}">
+
+            <label>이미지 파일명 (있는 경우):</label>
+            <input type="text" name="image" value="{{ q.image or '' }}">
 
             <label>보기:</label>
             <div id="choices-{{ i }}">
-                {% for choice in questions[i].choices %}
-                <input type="text" name="choices" value="{{ choice }}"><br>
+                {% for choice in q.choices %}
+                <input type="text" name="choices[]" value="{{ choice }}"><br>
                 {% endfor %}
             </div>
-            <button type="button" onclick="addChoice({{ i }})">보기 추가</button>
+            <button type="button" onclick="addChoice('{{ i }}')">보기 추가</button>
 
             <label>정답:</label>
-            <input type="text" name="answer" value="{{ questions[i].answer }}">
+            <input type="text" name="answer" value="{{ q.answer }}">
 
             <label>해설:</label>
-            <textarea name="explanation">{{ questions[i].explanation }}</textarea>
+            <textarea name="explanation">{{ q.explanation }}</textarea>
 
             <button type="submit">수정</button>
         </form>
@@ -51,9 +54,12 @@
         <label>문제:</label>
         <input type="text" name="question">
 
+        <label>이미지 파일명 (선택):</label>
+        <input type="text" name="image">
+
         <label>보기:</label>
         <div id="add-choices-container">
-            <input type="text" name="choices"><br>
+            <input type="text" name="choices[]"><br>
         </div>
         <button type="button" onclick="addChoice('add')">보기 추가</button>
 
@@ -72,7 +78,7 @@ function addChoice(id) {
     const container = document.getElementById(`choices-${id}`) || document.getElementById('add-choices-container');
     const input = document.createElement("input");
     input.type = "text";
-    input.name = "choices";
+    input.name = "choices[]";
     container.appendChild(input);
     container.appendChild(document.createElement("br"));
 }

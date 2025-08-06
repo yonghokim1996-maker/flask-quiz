@@ -9,6 +9,19 @@
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px;
                       border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
         h1 { text-align: center; cursor: pointer; }
+        /* ✅ 상단 고정 스타일 */
+        .answered-count-fixed {
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
         .question { margin-bottom: 20px; }
         .choices label { display: block; margin-bottom: 5px; }
         .submit-btn { display: block; width: 100%; padding: 10px; background: #007bff;
@@ -17,9 +30,16 @@
     </style>
 </head>
 <body>
+
+<!-- ✅ 고정된 문항 수 표시 -->
+<div id="answered-count" class="answered-count-fixed">
+    0 / {{ questions|length }} 문제 답변 완료
+</div>
+
 <div class="container">
     <h1 id="quiz-title">SMD+CM 요점정리 모의시험</h1>
-    <form method="POST" action="/submit">
+
+    <form method="POST" action="/submit" id="quiz-form">
         {% for i in range(questions|length) %}
         <div class="question">
             <p><strong>{{ i + 1 }}. {{ questions[i]['question'] }}</strong></p>
@@ -30,7 +50,7 @@
             <div class="choices">
                 {% for choice in questions[i]['choices'] %}
                 <label>
-                    <input type="radio" name="answer_{{ i }}" value="{{ choice }}">
+                    <input type="radio" name="q{{ i }}" value="{{ choice }}">
                     {{ choice }}
                 </label>
                 {% endfor %}
@@ -41,7 +61,9 @@
         <button type="submit" class="submit-btn">제출하기</button>
     </form>
 </div>
+
 <script>
+    // 관리자 진입: 제목 5번 클릭
     let clickCount = 0;
     document.getElementById("quiz-title").addEventListener("click", function () {
         clickCount++;
@@ -64,6 +86,40 @@
             clickCount = 0;
         }
         setTimeout(() => clickCount = 0, 2000);
+    });
+
+    // ✅ 현재 푼 문항 수 표시 기능
+    const totalQuestions = {{ questions|length }};
+    const answeredCountEl = document.getElementById("answered-count");
+
+    function updateAnsweredCount() {
+        let answered = 0;
+        for (let i = 0; i < totalQuestions; i++) {
+            if (document.querySelector(`input[name="q${i}"]:checked`)) {
+                answered++;
+            }
+        }
+        answeredCountEl.textContent = `${answered} / ${totalQuestions} 문제 답변 완료`;
+    }
+
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', updateAnsweredCount);
+    });
+
+    updateAnsweredCount();
+
+    // 문제 강제 선택 검증
+    document.getElementById("quiz-form").addEventListener("submit", function (e) {
+        for (let i = 0; i < totalQuestions; i++) {
+            const selected = document.querySelector(`input[name="q${i}"]:checked`);
+            if (!selected) {
+                e.preventDefault();
+                alert("모든 문제에 답을 선택해야 제출할 수 있습니다.");
+                const questionElement = document.querySelector(`input[name="q${i}"]`).closest('.question');
+                questionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+        }
     });
 </script>
 </body>
