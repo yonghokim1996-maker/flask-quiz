@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session
 import random
 import json
 import os
@@ -47,7 +47,8 @@ def login():
         if password == os.environ.get('USER_PASSWORD', '8104'):
             session['user_logged_in'] = True
             return redirect(url_for('index'))
-        return render_template('login.html', error="비밀번호가 올바르지 않습니다.")
+        else:
+            return render_template('login.html', error="비밀번호가 올바르지 않습니다.")
     return render_template('login.html')
 
 # 관리자 로그인
@@ -58,25 +59,24 @@ def admin_login():
         if password == os.environ.get('ADMIN_PASSWORD', '2241'):
             session['admin_logged_in'] = True
             return redirect(url_for('admin_dashboard'))
-        return render_template('login.html', error="관리자 비밀번호가 올바르지 않습니다.")
+        else:
+            return render_template('login.html', error="관리자 비밀번호가 올바르지 않습니다.")
     return render_template('login.html')
 
-# 🏠 메인 페이지
+# 메인 퀴즈 페이지
 @app.route('/')
 @login_required
 def index():
     questions = load_questions()
     randomized_questions = []
 
-    # 밀림 방지: 원래 인덱스를 숨김 필드로 저장
-    shuffled = list(enumerate(questions))
-    random.shuffle(shuffled)
+    shuffled_questions = questions[:]
+    random.shuffle(shuffled_questions)
 
-    for idx, q in shuffled:
+    for q in shuffled_questions:
         shuffled_choices = q['choices'][:]
         random.shuffle(shuffled_choices)
         randomized_questions.append({
-            "original_index": idx,
             "question": clean_text(q['question']),
             "choices": [clean_text(c) for c in shuffled_choices],
             "image": q.get('image'),
@@ -86,7 +86,7 @@ def index():
 
     return render_template('index.html', questions=randomized_questions)
 
-# 📝 제출
+# 결과 페이지
 @app.route('/submit', methods=['POST'])
 @login_required
 def submit():
@@ -94,27 +94,21 @@ def submit():
     score = 0
     incorrect_answers = []
 
-    total = len(questions)
-    for i in range(total):
-        q_idx = request.form.get(f'question_index_{i}')
-        user_answer = request.form.get(f'answer_{i}')
-        
-        if q_idx is not None:
-            q_idx = int(q_idx)
-            correct_answer = clean_text(questions[q_idx]['answer'])
-            if user_answer and clean_text(user_answer) == correct_answer:
-                score += 1
-            else:
-                incorrect_answers.append({
-                    "question": questions[q_idx]['question'],
-                    "your_answer": user_answer if user_answer else "미응답",
-                    "correct_answer": questions[q_idx]['answer'],
-                    "explanation": questions[q_idx].get('explanation', '해설이 준비되지 않았습니다.')
-                })
+    for i, q in enumerate(questions):
+        user_answer = request.form.get(f'q{i}')
+        if user_answer and clean_text(user_answer) == clean_text(q['answer']):
+            score += 1
+        else:
+            incorrect_answers.append({
+                "question": q['question'],
+                "your_answer": user_answer if user_answer else "미응답",
+                "correct_answer": q['answer'],
+                "explanation": q.get('explanation', '해설이 준비되지 않았습니다.')
+            })
 
     return render_template('result.html',
                            score=score,
-                           total=total,
+                           total=len(questions),
                            incorrect_answers=incorrect_answers)
 
 # 관리자 대시보드
@@ -124,16 +118,20 @@ def admin_dashboard():
     questions = load_questions()
     return render_template('admin_dashboard.html', questions=questions)
 
-# 문제 수정
+# 문제 수정 (이미지 유지)
 @app.route('/admin/edit/<int:index>', methods=['POST'])
 @admin_required
 def edit_question(index):
     questions = load_questions()
+    existing_image = questions[index].get("image", "")
+    image = request.form.get('image') or existing_image  # 새 이미지 없으면 기존 유지
+
     questions[index] = {
         "question": request.form['question'],
         "choices": request.form.getlist('choices'),
         "answer": request.form['answer'],
-        "explanation": request.form.get('explanation', '')
+        "explanation": request.form.get('explanation', ''),
+        "image": image
     }
     save_questions(questions)
     return redirect(url_for('admin_dashboard'))
@@ -147,7 +145,8 @@ def add_question():
         "question": request.form['question'],
         "choices": request.form.getlist('choices'),
         "answer": request.form['answer'],
-        "explanation": request.form.get('explanation', '')
+        "explanation": request.form.get('explanation', ''),
+        "image": request.form.get('image', '')
     }
     questions.append(new_question)
     save_questions(questions)
@@ -163,6 +162,7 @@ def delete_question(index):
         save_questions(questions)
     return redirect(url_for('admin_dashboard'))
 
+# 로그아웃
 @app.route('/logout')
 def logout():
     session.clear()
