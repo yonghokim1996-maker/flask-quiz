@@ -5,105 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMD+CM 요점정리 모의시험</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            margin: 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            text-align: center;
-            cursor: pointer;
-        }
-        .question {
-            margin-bottom: 20px;
-        }
-        .choices label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        .submit-btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .submit-btn:hover {
-            background: #0056b3;
-        }
-        @media (max-width: 600px) {
-            .container {
-                padding: 10px;
-            }
-            h1 {
-                font-size: 20px;
-            }
-        }
+        body { font-family: Arial, sans-serif; background-color: #f8f9fa; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px;
+                      border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; cursor: pointer; }
+        .question { margin-bottom: 20px; }
+        .choices label { display: block; margin-bottom: 5px; }
+        .submit-btn { display: block; width: 100%; padding: 10px; background: #007bff;
+                      color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
+        .submit-btn:hover { background: #0056b3; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 id="quiz-title">SMD+CM 요점정리 모의시험</h1>
-        <form method="POST" action="/submit">
-            {% for i in range(questions|length) %}
-            <div class="question">
-                <p><strong>{{ i + 1 }}. {{ questions[i]['question'] }}</strong></p>
-                {% if questions[i].get('image') %}
-                    <img src="{{ url_for('static', filename=questions[i]['image']) }}" 
-                         alt="문제 이미지" style="max-width: 100%; height: auto;">
-                {% endif %}
-                <div class="choices">
-                    {% for choice in questions[i]['choices'] %}
-                    <label>
-                        <input type="radio" name="q{{ i }}" value="{{ choice }}">
-                        {{ choice }}
-                    </label>
-                    {% endfor %}
-                </div>
-                <input type="hidden" name="id{{ i }}" value="{{ questions[i]['id'] }}">
+<div class="container">
+    <h1 id="quiz-title">SMD+CM 요점정리 모의시험</h1>
+    <form method="POST" action="/submit">
+        {% for i in range(questions|length) %}
+        <div class="question">
+            <p><strong>{{ i + 1 }}. {{ questions[i]['question'] }}</strong></p>
+            {% if questions[i].get('image') %}
+                <img src="{{ url_for('static', filename=questions[i]['image']) }}" alt="문제 이미지"
+                     style="max-width: 100%; height: auto;">
+            {% endif %}
+            <div class="choices">
+                {% for choice in questions[i]['choices'] %}
+                <label>
+                    <input type="radio" name="answer_{{ i }}" value="{{ choice }}">
+                    {{ choice }}
+                </label>
+                {% endfor %}
             </div>
-            {% endfor %}
-            <button type="submit" class="submit-btn">제출하기</button>
-        </form>
-    </div>
-
-    <script>
-        let clickCount = 0;
-        document.getElementById("quiz-title").addEventListener("click", function () {
-            clickCount++;
-            if (clickCount >= 5) {
-                const password = prompt("관리자 비밀번호를 입력하세요:");
-                if (password) {
-                    fetch("/admin-login", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: `password=${encodeURIComponent(password)}`
-                    })
-                    .then(response => {
-                        if (response.redirected) {
-                            window.location.href = response.url;
-                        } else {
-                            alert("비밀번호가 올바르지 않습니다.");
-                        }
-                    })
-                    .catch(err => console.error(err));
-                }
-                clickCount = 0;
+            <input type="hidden" name="question_index_{{ i }}" value="{{ questions[i]['original_index'] }}">
+        </div>
+        {% endfor %}
+        <button type="submit" class="submit-btn">제출하기</button>
+    </form>
+</div>
+<script>
+    let clickCount = 0;
+    document.getElementById("quiz-title").addEventListener("click", function () {
+        clickCount++;
+        if (clickCount >= 5) {
+            const password = prompt("관리자 비밀번호를 입력하세요:");
+            if (password) {
+                fetch("/admin-login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        alert("비밀번호가 올바르지 않습니다.");
+                    }
+                });
             }
-            setTimeout(() => clickCount = 0, 2000);
-        });
-    </script>
+            clickCount = 0;
+        }
+        setTimeout(() => clickCount = 0, 2000);
+    });
+</script>
 </body>
 </html>

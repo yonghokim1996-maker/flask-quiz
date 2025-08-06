@@ -47,8 +47,7 @@ def login():
         if password == os.environ.get('USER_PASSWORD', '8104'):
             session['user_logged_in'] = True
             return redirect(url_for('index'))
-        else:
-            return render_template('login.html', error="비밀번호가 올바르지 않습니다.")
+        return render_template('login.html', error="비밀번호가 올바르지 않습니다.")
     return render_template('login.html')
 
 # 관리자 로그인
@@ -59,23 +58,25 @@ def admin_login():
         if password == os.environ.get('ADMIN_PASSWORD', '2241'):
             session['admin_logged_in'] = True
             return redirect(url_for('admin_dashboard'))
-        else:
-            return render_template('login.html', error="관리자 비밀번호가 올바르지 않습니다.")
+        return render_template('login.html', error="관리자 비밀번호가 올바르지 않습니다.")
     return render_template('login.html')
 
+# 🏠 메인 페이지
 @app.route('/')
 @login_required
 def index():
     questions = load_questions()
     randomized_questions = []
 
-    shuffled_questions = questions[:]
-    random.shuffle(shuffled_questions)
+    # 밀림 방지: 원래 인덱스를 숨김 필드로 저장
+    shuffled = list(enumerate(questions))
+    random.shuffle(shuffled)
 
-    for q in shuffled_questions:
+    for idx, q in shuffled:
         shuffled_choices = q['choices'][:]
         random.shuffle(shuffled_choices)
         randomized_questions.append({
+            "original_index": idx,
             "question": clean_text(q['question']),
             "choices": [clean_text(c) for c in shuffled_choices],
             "image": q.get('image'),
@@ -85,6 +86,7 @@ def index():
 
     return render_template('index.html', questions=randomized_questions)
 
+# 📝 제출
 @app.route('/submit', methods=['POST'])
 @login_required
 def submit():
@@ -92,21 +94,27 @@ def submit():
     score = 0
     incorrect_answers = []
 
-    for i, q in enumerate(questions):
-        user_answer = request.form.get(f'q{i}')
-        if user_answer and clean_text(user_answer) == clean_text(q['answer']):
-            score += 1
-        else:
-            incorrect_answers.append({
-                "question": q['question'],
-                "your_answer": user_answer if user_answer else "미응답",
-                "correct_answer": q['answer'],
-                "explanation": q.get('explanation', '해설이 준비되지 않았습니다.')
-            })
+    total = len(questions)
+    for i in range(total):
+        q_idx = request.form.get(f'question_index_{i}')
+        user_answer = request.form.get(f'answer_{i}')
+        
+        if q_idx is not None:
+            q_idx = int(q_idx)
+            correct_answer = clean_text(questions[q_idx]['answer'])
+            if user_answer and clean_text(user_answer) == correct_answer:
+                score += 1
+            else:
+                incorrect_answers.append({
+                    "question": questions[q_idx]['question'],
+                    "your_answer": user_answer if user_answer else "미응답",
+                    "correct_answer": questions[q_idx]['answer'],
+                    "explanation": questions[q_idx].get('explanation', '해설이 준비되지 않았습니다.')
+                })
 
     return render_template('result.html',
                            score=score,
-                           total=len(questions),
+                           total=total,
                            incorrect_answers=incorrect_answers)
 
 # 관리자 대시보드
@@ -153,7 +161,6 @@ def delete_question(index):
     if 0 <= index < len(questions):
         questions.pop(index)
         save_questions(questions)
-    save_questions(questions)
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/logout')
