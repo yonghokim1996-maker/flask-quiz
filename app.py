@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import random
 import json
 import os
@@ -17,7 +17,11 @@ def load_questions():
     with open(json_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
-# ✅ 로그인 데코레이터
+def save_questions(questions):
+    json_path = os.path.join(BASE_DIR, 'questions.json')
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(questions, f, ensure_ascii=False, indent=2)
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -26,7 +30,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# ✅ 관리자 전용 데코레이터
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -35,7 +38,6 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# 🔑 일반 사용자 로그인
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -47,14 +49,13 @@ def login():
             return render_template('login.html', error="비밀번호가 올바르지 않습니다.")
     return render_template('login.html')
 
-# 🔑 관리자 로그인
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
         password = request.form.get('password')
         if password == os.environ.get('ADMIN_PASSWORD', '2241'):
             session['admin_logged_in'] = True
-            return redirect(url_for('admin'))
+            return redirect(url_for('admin_dashboard'))
         else:
             return render_template('login.html', error="관리자 비밀번호가 올바르지 않습니다.")
     return render_template('login.html')
@@ -65,7 +66,6 @@ def index():
     questions = load_questions()
     randomized_questions = []
 
-    # 질문 섞기
     shuffled = list(enumerate(questions))
     random.shuffle(shuffled)
 
@@ -73,7 +73,7 @@ def index():
         shuffled_choices = q['choices'][:]
         random.shuffle(shuffled_choices)
         randomized_questions.append({
-            "id": idx,  # 원본 인덱스 저장
+            "id": idx,
             "question": clean_text(q['question']),
             "choices": [clean_text(c) for c in shuffled_choices],
             "image": q.get('image'),
@@ -114,10 +114,52 @@ def submit():
                            total=len(questions),
                            incorrect_answers=incorrect_answers)
 
-@app.route('/admin')
+# ✅ 관리자 대시보드
+@app.route('/admin/dashboard')
 @admin_required
-def admin():
-    return "여기서 문제를 수정/추가/삭제할 수 있는 페이지를 만들면 됩니다."
+def admin_dashboard():
+    questions = load_questions()
+    return render_template('admin_dashboard.html', questions=questions)
+
+# ✅ 문제 추가
+@app.route('/admin/add', methods=['POST'])
+@admin_required
+def add_question():
+    questions = load_questions()
+    new_question = {
+        "question": request.form.get('question'),
+        "choices": request.form.getlist('choices'),
+        "answer": request.form.get('answer'),
+        "explanation": request.form.get('explanation')
+    }
+    questions.append(new_question)
+    save_questions(questions)
+    return redirect(url_for('admin_dashboard'))
+
+# ✅ 문제 삭제
+@app.route('/admin/delete/<int:index>', methods=['POST'])
+@admin_required
+def delete_question(index):
+    questions = load_questions()
+    if 0 <= index < len(questions):
+        questions.pop(index)
+        save_questions(questions)
+    return redirect(url_for('admin_dashboard'))
+
+# ✅ 문제 수정
+@app.route('/admin/edit/<int:index>', methods=['POST'])
+@admin_required
+def edit_question(index):
+    questions = load_questions()
+    if 0 <= index < len(questions):
+        questions[index] = {
+            "question": request.form.get('question'),
+            "choices": request.form.getlist('choices'),
+            "answer": request.form.get('answer'),
+            "explanation": request.form.get('explanation')
+        }
+        save_questions(questions)
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/logout')
 def logout():

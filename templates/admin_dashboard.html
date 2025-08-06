@@ -1,31 +1,42 @@
-<h2>문제 관리</h2>
-<table border="1">
-  <tr><th>문제</th><th>정답</th><th>작업</th></tr>
-  {% for q in questions %}
-  <tr>
-    <td>{{ q.question }}</td>
-    <td>{{ q.answer }}</td>
-    <td>
-      <form action="/admin/delete/{{ loop.index0 }}" method="POST">
-        <button type="submit">삭제</button>
-      </form>
-      <form action="/admin/edit/{{ loop.index0 }}" method="POST">
-        <input type="text" name="question" value="{{ q.question }}">
-        <input type="text" name="choices" value="{{ q.choices|join(',') }}">
-        <input type="text" name="answer" value="{{ q.answer }}">
-        <input type="text" name="explanation" value="{{ q.explanation }}">
-        <button type="submit">수정</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .question-box { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+        input, textarea { width: 100%; margin: 5px 0; padding: 5px; }
+        button { margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>관리자 대시보드</h1>
+    
+    <h2>문제 추가</h2>
+    <form method="POST" action="/admin/add">
+        <textarea name="question" placeholder="문제 내용"></textarea>
+        <input type="text" name="choices" placeholder="선택지 1, 선택지 2, 선택지 3, 선택지 4">
+        <input type="text" name="answer" placeholder="정답">
+        <textarea name="explanation" placeholder="해설"></textarea>
+        <button type="submit">추가</button>
+    </form>
 
-<h3>문제 추가</h3>
-<form action="/admin/add" method="POST">
-  <input type="text" name="question" placeholder="문제 입력"><br>
-  <input type="text" name="choices" placeholder="선택지(쉼표로 구분)"><br>
-  <input type="text" name="answer" placeholder="정답"><br>
-  <input type="text" name="explanation" placeholder="해설"><br>
-  <button type="submit">추가</button>
-</form>
+    <h2>기존 문제</h2>
+    {% for i, q in enumerate(questions) %}
+    <div class="question-box">
+        <form method="POST" action="/admin/edit/{{ i }}">
+            <textarea name="question">{{ q.question }}</textarea>
+            <input type="text" name="choices" value="{{ ', '.join(q.choices) }}">
+            <input type="text" name="answer" value="{{ q.answer }}">
+            <textarea name="explanation">{{ q.explanation }}</textarea>
+            <button type="submit">수정</button>
+        </form>
+        <form method="POST" action="/admin/delete/{{ i }}">
+            <button type="submit">삭제</button>
+        </form>
+    </div>
+    {% endfor %}
+</body>
+</html>
