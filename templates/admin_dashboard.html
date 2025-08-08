@@ -18,7 +18,8 @@
 <div class="container">
     <h2>문제 관리</h2>
 
-    {% for i, q in questions %}
+    {% for i in range(questions|length) %}
+    {% set q = questions[i] %}
     <div class="question-block">
         <form method="POST" action="/admin/edit/{{ i }}">
             <label>문제:</label>
@@ -30,7 +31,7 @@
             <label>보기:</label>
             <div id="choices-{{ i }}">
                 {% for choice in q.choices %}
-                <input type="text" name="choices[]" value="{{ choice }}"><br>
+                    <input type="text" name="choices[]" value="{{ choice }}" required><br>
                 {% endfor %}
             </div>
             <button type="button" onclick="addChoice('{{ i }}')">보기 추가</button>
@@ -79,6 +80,7 @@ function addChoice(id) {
     const input = document.createElement("input");
     input.type = "text";
     input.name = "choices[]";
+    input.required = true;
     container.appendChild(input);
     container.appendChild(document.createElement("br"));
 }

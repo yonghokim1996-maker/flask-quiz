@@ -173,15 +173,15 @@
     "explanation": "툼스톤은 위에서 봤을때 미스얼라인이 약간 있을 경우, 사이드로 봐서 Component 가 약간 들떠 Pad non-wet 이 난 경우 불량이다."
   },
   {
-    "question": "아래 이미지는 어떤 불량인지 고르시요?(Soldering 이 부분적으로 이루어진 경우는 양에 상관없이 불량이다.)",
+    "question": "아래 이미지는 Component Non wet & Dewet(컴포넌트 넌웻 & 디웻) 불량입니다. 이 불량의 설명이 알맞는 것은?",
     "choices": [
-      "Component tombstone(컴포넌트 툼스톤)",
-      "Component Non wet & Dewet(컴포넌트 넌웻 & 디웻)",
-      "Component Crack(컴포넌트 크랙)",
-      "Missing Component(미씽 컴포넌트)"
+      "Soldering 이 부분적으로 이루어진 경우는 양에 상관없이 불량이다.",
+      "Component 가 지정 Pad 위에 빠짐이 발생한 경우 불량이다.",
+      "10x 스코프로 위에서 봤을때 표면에 크랙 자국이 있는 경우 불량이다.",
+      "Non-Common net 에서 Solder Paste 로 인해 Short 가 있을 경우 불량이다."
     ],
-    "answer": "Component Non wet & Dewet(컴포넌트 넌웻 & 디웻)",
-    "explanation": "Soldering 이 부분적으로 이루어진 경우는 양에 상관없이 불량이다.",
+    "answer": "Soldering 이 부분적으로 이루어진 경우는 양에 상관없이 불량이다.",
+    "explanation": "Component Non wet & Dewet은 Soldering 이 부분적으로 이루어진 경우는 양에 상관없이 불량입니다.",
     "image": "CN.png"
   },
   {

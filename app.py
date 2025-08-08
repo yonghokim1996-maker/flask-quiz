@@ -68,7 +68,6 @@ def index():
     questions = load_questions()
     randomized_questions = []
 
-    # 밀림 방지: 원래 인덱스를 숨김 필드로 저장
     shuffled = list(enumerate(questions))
     random.shuffle(shuffled)
 
@@ -93,16 +92,16 @@ def submit():
     questions = load_questions()
     score = 0
     incorrect_answers = []
-    answered_count = 0  # ✅ 추가
+    answered_count = 0
 
     total = len(questions)
     for i in range(total):
         q_idx = request.form.get(f'question_index_{i}')
-        user_answer = request.form.get(f'q{i}')  # ✅ 라디오 버튼 이름에 맞춤
+        user_answer = request.form.get(f'q{i}')
 
         if q_idx is not None:
             q_idx = int(q_idx)
-            if user_answer:  # ✅ 답변한 문제만 카운트
+            if user_answer:
                 answered_count += 1
             correct_answer = clean_text(questions[q_idx]['answer'])
             if user_answer and clean_text(user_answer) == correct_answer:
@@ -118,7 +117,7 @@ def submit():
     return render_template('result.html',
                            score=score,
                            total=total,
-                           answered=answered_count,  # ✅ 전달
+                           answered=answered_count,
                            incorrect_answers=incorrect_answers)
 
 # 관리자 대시보드
@@ -133,9 +132,10 @@ def admin_dashboard():
 @admin_required
 def edit_question(index):
     questions = load_questions()
+    choices = [c.strip() for c in request.form.getlist('choices[]') if c.strip()]
     questions[index] = {
         "question": request.form['question'],
-        "choices": request.form.getlist('choices'),
+        "choices": choices,
         "answer": request.form['answer'],
         "explanation": request.form.get('explanation', ''),
         "image": request.form.get('image', '')
@@ -148,9 +148,10 @@ def edit_question(index):
 @admin_required
 def add_question():
     questions = load_questions()
+    choices = [c.strip() for c in request.form.getlist('choices[]') if c.strip()]
     new_question = {
         "question": request.form['question'],
-        "choices": request.form.getlist('choices'),
+        "choices": choices,
         "answer": request.form['answer'],
         "explanation": request.form.get('explanation', ''),
         "image": request.form.get('image', '')
